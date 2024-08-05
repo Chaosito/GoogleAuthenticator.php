@@ -24,5 +24,8 @@ $secret = $g->generateSecret();
 print "Get a new Secret: $secret \n";
 
 print "The QR Code for this secret (to scan with the Google Authenticator App: \n";
-print $g->getURL('chregu','example.org',$secret);
+$otpUrl = $g->getUrl('chregu', 'example.org', $secret);
+$qrUrl = $g->getQrImageFromQrServer($otpUrl);
+print "<img src='{$qrUrl}' />";
+
 print "\n";

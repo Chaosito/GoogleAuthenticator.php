@@ -12,7 +12,7 @@
 // limitations under the License.
 
 
-include_once("FixedByteNotation.php");
+include_once("FixedBitNotation.php");
 
 
 class GoogleAuthenticator {
@@ -63,16 +63,20 @@ class GoogleAuthenticator {
         return $val2[1];
     }
     
-    public function getUrl($user, $hostname, $secret, $params = []) {
-        $width = !empty($params['width']) && (int) $params['width'] > 0 ? (int) $params['width'] : 200;
-        $height = !empty($params['height']) && (int) $params['height'] > 0 ? (int) $params['height'] : 200;
-        
+    public function getUrl($user, $hostname, $secret)
+    {
         // Ex. otpauth://totp/Example:alice@google.com?secret=JBSWY3DPEHPK3PXP&issuer=Example
         // By: https://github.com/google/google-authenticator/wiki/Key-Uri-Format
-        $urlencoded = urlencode('otpauth://totp/'.$hostname.':'.urlencode($user).'?secret='.$secret.'&issuer='.urlencode($user));
-
-        return "https://api.qrserver.com/v1/create-qr-code/?data={$urlencoded}&size=200x200";
+        return "otpauth://totp/{$hostname}:" . urlencode($user) . "?secret={$secret}&issuer=" . urlencode($user);
+    }
+    
+    public function getQrImageFromQrServer($otpAuthUrl, $width = 200, $height = 200)
+    {
+        if ((int)$width <= 0 || (int)$height <= 0) {
+            throw new Exception('Width and height must be positive values!');
+        }
         
+        return "https://api.qrserver.com/v1/create-qr-code/?data=". urlencode($otpAuthUrl) . "&size={$width}x{$height}";
     }
     
     public function generateSecret() {
