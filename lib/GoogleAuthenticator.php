@@ -63,12 +63,15 @@ class GoogleAuthenticator {
         return $val2[1];
     }
     
-    public function getUrl($user, $hostname, $secret) {
-        $url =  sprintf("otpauth://totp/%s@%s?secret=%s", $user, $hostname, $secret);
-        $encoder = "https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=";
-        $encoderURL = sprintf( "%sotpauth://totp/%s@%s&secret=%s",$encoder, $user, $hostname, $secret);
+    public function getUrl($user, $hostname, $secret, $params = []) {
+        $width = !empty($params['width']) && (int) $params['width'] > 0 ? (int) $params['width'] : 200;
+        $height = !empty($params['height']) && (int) $params['height'] > 0 ? (int) $params['height'] : 200;
         
-        return $encoderURL;
+        // Ex. otpauth://totp/Example:alice@google.com?secret=JBSWY3DPEHPK3PXP&issuer=Example
+        // By: https://github.com/google/google-authenticator/wiki/Key-Uri-Format
+        $urlencoded = urlencode('otpauth://totp/'.$hostname.':'.urlencode($user).'?secret='.$secret.'&issuer='.urlencode($user));
+
+        return "https://api.qrserver.com/v1/create-qr-code/?data={$urlencoded}&size=200x200";
         
     }
     
