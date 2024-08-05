@@ -2,7 +2,6 @@
 include_once("lib/GoogleAuthenticator.php");
 
 $secret = 'XVQ2UIGO75XRUKJO';
-$time = floor(time() / 30);
 $code = "846474";
 
 $g = new GoogleAuthenticator();
@@ -14,7 +13,7 @@ print "\n";
 
 print "Check if $code is valid: ";
 
-if ($g->checkCode($secret,$code)) {
+if ($g->checkCode($secret, $code)) {
     print "YES \n";   
 } else {
     print "NO \n";

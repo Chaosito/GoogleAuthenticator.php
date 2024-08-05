@@ -11,85 +11,76 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 include_once("FixedBitNotation.php");
 
+class GoogleAuthenticator
+{
+    const PASS_CODE_LENGTH = 6;
+    const SECRET_LENGTH = 10;
+    const CHARMAP = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
 
-class GoogleAuthenticator {
-    static $PASS_CODE_LENGTH = 6;
-    static $PIN_MODULO;
-    static $SECRET_LENGTH = 10;
-    
-    public function __construct() {
-        self::$PIN_MODULO = pow(10, self::$PASS_CODE_LENGTH);
-    }
-    
-    public function checkCode($secret,$code) {
+    public function checkCode($secret, $code)
+    {
         $time = floor(time() / 30);
-        for ( $i = -1; $i <= 1; $i++) {
-            
-            if ($this->getCode($secret,$time + $i) == $code) {
+        for ($i = -1; $i <= 1; $i++) {
+            if ($this->getCode($secret, $time + $i) == $code) {
                 return true;
             }
         }
-        
         return false;
-        
     }
-    
-    public function getCode($secret,$time = null) {
-        
+
+    public function getCode($secret, $time = null)
+    {
         if (!$time) {
             $time = floor(time() / 30);
         }
-        $base32 = new FixedBitNotation(5, 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567', TRUE, TRUE);
+        $base32 = new FixedBitNotation(5, self::CHARMAP, true, true);
         $secret = $base32->decode($secret);
-        
+
         $time = pack("N", $time);
-        $time = str_pad($time,8, chr(0), STR_PAD_LEFT);
-        
-        $hash = hash_hmac('sha1',$time,$secret,true);
-        $offset = ord(substr($hash,-1));
+        $time = str_pad($time, 8, chr(0), STR_PAD_LEFT);
+
+        $hash = hash_hmac('sha1', $time, $secret, true);
+        $offset = ord(substr($hash, -1));
         $offset = $offset & 0xF;
-        
+
         $truncatedHash = self::hashToInt($hash, $offset) & 0x7FFFFFFF;
-        $pinValue = str_pad($truncatedHash % self::$PIN_MODULO,6,"0",STR_PAD_LEFT);;
+        $pinModulo = pow(10, self::PASS_CODE_LENGTH);
+        $pinValue = str_pad($truncatedHash % $pinModulo, 6, "0", STR_PAD_LEFT);;
         return $pinValue;
     }
-    
-    protected  function hashToInt($bytes, $start) {
+
+    protected  function hashToInt($bytes, $start)
+    {
         $input = substr($bytes, $start, strlen($bytes) - $start);
-        $val2 = unpack("N",substr($input,0,4));
+        $val2 = unpack("N", substr($input, 0, 4));
         return $val2[1];
     }
-    
+
     public function getUrl($user, $hostname, $secret)
     {
         // Ex. otpauth://totp/Example:alice@google.com?secret=JBSWY3DPEHPK3PXP&issuer=Example
         // By: https://github.com/google/google-authenticator/wiki/Key-Uri-Format
         return "otpauth://totp/{$hostname}:" . urlencode($user) . "?secret={$secret}&issuer=" . urlencode($user);
     }
-    
+
     public function getQrImageFromQrServer($otpAuthUrl, $width = 200, $height = 200)
     {
         if ((int)$width <= 0 || (int)$height <= 0) {
             throw new Exception('Width and height must be positive values!');
         }
-        
-        return "https://api.qrserver.com/v1/create-qr-code/?data=". urlencode($otpAuthUrl) . "&size={$width}x{$height}";
+        return "https://api.qrserver.com/v1/create-qr-code/?data=" . urlencode($otpAuthUrl) . "&size={$width}x{$height}";
     }
-    
-    public function generateSecret() {
-        $secret = "";
-        for($i = 1;  $i<= self::$SECRET_LENGTH;$i++) {
-            $c = rand(0,255);
-            $secret .= pack("c",$c);
-        }
-        $base32 = new FixedBitNotation(5, 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567', TRUE, TRUE);
-        return  $base32->encode($secret);
-        
-        
-    }
-    
-}
 
+    public function generateSecret()
+    {
+        $secret = "";
+        for ($i = 1;  $i <= self::SECRET_LENGTH; $i++) {
+            $c = rand(0, 255);
+            $secret .= pack("c", $c);
+        }
+        $base32 = new FixedBitNotation(5, self::CHARMAP, true, true);
+        return  $base32->encode($secret);
+    }
+}
